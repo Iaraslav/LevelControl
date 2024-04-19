@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{0e6006db-b60c-47ef-92bd-9d5ed8e74b0e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	ValveController : ValveController;
+	InterfaceControlPanel : InterfaceControlPanel;
+
+	StartButton : BOOL;
+	ResetButton : BOOL;
+	StopButton : BOOL;
+	
+	StartLight : BOOL;
+	ResetLight : BOOL;
+	StopLight : BOOL;
+	FactoryIOReset: BOOL;
+
+	Setpoint : WORD;
+	LevelMeter : WORD;
+	
+	FillValve : WORD;
+	DischargeValve: WORD;
+	SP : WORD;
+	PV : WORD;
+	
+	SP_Scaled: REAL;
+	LevelScaled: REAL;
+	
+	isSystemON: BOOL;
+	isStopON: BOOL;
+	isResetON: BOOL;
+	
+	tBlink: TON;
+	BlinkBit: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// I/O Assignments
+GVL.mb_Input_Coils[0] := StartLight;
+GVL.mb_Input_Coils[1] := ResetLight;
+GVL.mb_Input_Coils[2] := StopLight;
+GVL.mb_Input_Coils[3] := FactoryIOReset;
+
+StartButton := GVL.mb_Output_Coils[0];
+ResetButton := GVL.mb_Output_Coils[1];
+StopButton := GVL.mb_Output_Coils[2];
+
+LevelMeter := GVL.mb_Output_Registers[0];
+Setpoint := GVL.mb_Output_Registers[2];
+
+GVL.mb_Input_Registers[0] := FillValve;
+GVL.mb_Input_Registers[1] := DischargeValve;
+GVL.mb_Input_Registers[2] := SP;
+GVL.mb_Input_Registers[3] := PV;
+//
+// Blink bit assignment
+tBlink(IN := NOT tBlink.Q, PT := T#1000MS);
+BlinkBit := tBlink.ET > T#500MS;
+//
+// Buttons control initialization
+InterfaceControlPanel(StartButton := StartButton, ResetButton := ResetButton, StopButton := StopButton, blink := BlinkBit,
+	isStopON := isStopON, isSystemON := isSystemON, isResetON := isResetON, StartLight => StartLight, StopLight => StopLight, ResetLight => ResetLight);
+//
+// Reset logic
+IF ResetButton THEN
+	FactoryIOReset := TRUE;
+	isSystemON := FALSE;
+	isStopON := TRUE;
+ELSE
+	FactoryIOReset := FALSE;
+END_IF;
+//
+// Setpoint conversion & assignment
+AnalogInputConversion(AnalogInput := Setpoint, ScaleMax := 300, ScaledValue => SP_Scaled);
+SP := REAL_TO_WORD(SP_Scaled);
+//
+// Current water level conversion & assignment
+AnalogInputConversion(AnalogInput := LevelMeter, ScaleMax := 300, ScaledValue => LevelScaled);
+PV := REAL_TO_WORD(LevelScaled);
+//
+// Valve control logic
+IF isSystemON THEN	
+	IF PV < SP THEN
+		AnalogOutputConversion(0.0, AnalogOutput => DischargeValve);
+		ValveController(TargetWaterLevel := SP_Scaled, CurrentWaterLevel := LevelScaled, ScaleMax := 30, AnalogOutputValue => FillValve);
+	END_IF;
+	IF PV > SP THEN
+		AnalogOutputConversion(0.0, AnalogOutput => FillValve);
+		ValveController(TargetWaterLevel := LevelScaled, CurrentWaterLevel := SP_Scaled, ScaleMax := 7, AnalogOutputValue => DischargeValve);
+	END_IF;
+	IF PV = SP THEN
+		AnalogOutputConversion(0.0, AnalogOutput => FillValve);
+		AnalogOutputConversion(0.0, AnalogOutput => DischargeValve);
+	END_IF;
+ELSE
+	AnalogOutputConversion(0.0, AnalogOutput => FillValve);
+	AnalogOutputConversion(0.0, AnalogOutput => DischargeValve);
+END_IF;
+//]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="28" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="64" Count="1" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="66" Count="3" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="23" Count="0" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="84" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="125" Count="1" />
+      <LineId Id="134" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="127" Count="0" />
+      <LineId Id="124" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="29" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="87" Count="0" />
+      <LineId Id="31" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="40" Count="2" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="45" Count="1" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="81" Count="2" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="50" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="InterfaceControlPanel" Id="{27c35da5-f9a5-42cc-a2e3-c07c15751685}" SpecialFunc="None">
+    <Declaration><![CDATA[// Buttons control logic
+FUNCTION_BLOCK PUBLIC InterfaceControlPanel
+VAR_INPUT
+	StartButton : BOOL;
+	ResetButton : BOOL;
+	StopButton : BOOL;
+	blink : BOOL;
+END_VAR
+VAR_IN_OUT
+	isStopON : BOOL;
+	isSystemON : BOOL;
+	isResetON : BOOL;
+END_VAR
+VAR_OUTPUT
+	StartLight : BOOL;
+	StopLight : BOOL;
+	ResetLight : BOOL;
+END_VAR
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Memory bit for isSystemON
+IF StartButton THEN
+	isSystemON := TRUE;
+END_IF;
+
+IF NOT StopButton THEN
+	isSystemON := FALSE;
+END_IF;
+// -------------
+// Memory bit for isStopON
+IF NOT StopButton THEN
+	isStopON := TRUE;
+END_IF;
+
+IF isSystemON THEN
+	isStopON := FALSE;
+END_IF;
+// -------------
+// Memory bit for isResetON
+IF ResetButton THEN
+	isResetON := TRUE;
+END_IF;
+
+IF isSystemON THEN
+	isResetON := FALSE;
+END_IF;
+// -------------
+// ------------- OUTPUTS ---------------
+StartLight := isSystemON OR (isStopON AND NOT isSystemON AND blink);
+//
+ResetLight := isResetON;
+//
+StopLight := isStopON AND NOT isSystemON;]]></ST>
+    </Implementation>
+    <LineIds Name="InterfaceControlPanel">
+      <LineId Id="9" Count="0" />
+      <LineId Id="23" Count="2" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="28" Count="6" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="37" Count="6" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="46" Count="5" />
+      <LineId Id="54" Count="2" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
